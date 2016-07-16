@@ -256,14 +256,17 @@ def plotGrid(grid, patchcol='patch', ax=None, cmap=plt.cm.Blues, vextent=None,
     # and set it's values to the grid.values.column (may be unnecessary)
     sm._A = np.array(grid.value.tolist())
 
-    # stuff the `patches` (grid cells) column of the grid in a PatchCollection
-    edgecol = sm.to_rgba(grid.value.values)*0 + .7
+    # make edge color always consistent
+    norm_edge = plt.Normalize(vmin=0, vmax=10)
+    sm_edge = plt.cm.ScalarMappable(cmap=plt.cm.Blues, norm=norm_edge)
+    edgecol = sm_edge.to_rgba(np.zeros(grid.value.shape[0]) + .7)
 
     if not blankgrid:
         facecolors = grid.value.values
     else:
         facecolors = np.zeros(grid.value.values.shape)
 
+    # stuff the `patches` (grid cells) column of the grid in a PatchCollection
     patches = PatchCollection(grid.patch.tolist(), match_original=False,
         facecolors=sm.to_rgba(grid.value.values), linewidths=[.25,.25,.25],
             edgecolors=edgecol)
