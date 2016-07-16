@@ -202,7 +202,7 @@ def attachAnimateValues(grid, filename, valcol, year, month, icol='I_MOD', jcol=
     return joined
 
 def plotGrid(grid, patchcol='patch', ax=None, cmap=plt.cm.Blues, vextent=None,
-             log=True, blankgrid=False, **figkwargs):
+             log=True, blankgrid=False, datetime_fmt="%Y-%m-%d", **figkwargs):
     '''
         Creates a matplotlib figure of model grid with some output values assoicated
         with each cell
@@ -287,8 +287,10 @@ def plotGrid(grid, patchcol='patch', ax=None, cmap=plt.cm.Blues, vextent=None,
     sns.despine()
     time_text = ax.text(0.8, 0.9, '', transform=ax.transAxes, fontsize=8,
             verticalalignment='top')
-    textstr = grid['datetime'].iloc[0].strftime("%Y-%m-%d")
-    time_text.set_text(textstr)
+
+    if datetime_fmt is not None:
+        textstr = grid['datetime'].iloc[0].strftime(datetime_fmt)
+        time_text.set_text(textstr)
     # snug up the figure's layout
     fig.tight_layout()
 
