@@ -6,6 +6,8 @@ Recommended installation is via conda:
 + conda create -n animate python=2.7 pandas seaborn numexpr jupyter<br>
 + activate animate<br>
 + pip install descartes<br>
++ conda install --yes --channel=ioos gdal=1<br>
++ conda install --yes --channel=ioos fiona<br>
 + conda install --yes --channel=ioos shapely<br>
 + conda install --yes --channel=pelson pyshp<br>
 + run setup.py or install via pip
