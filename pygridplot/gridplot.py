@@ -119,87 +119,43 @@ def readModelGrid(shapefilename, icol='MODI', jcol='MODJ', ijcol_idx=[4, 5]):
     # return the columns we need
     return grid[['cell', 'area', 'easting', 'northing']]
 
-def attachAnimateValues(grid, filename, valcol, year, month, icol='I_MOD', jcol='J_MOD',
-                       tcol='DUMPID', hcol='ST_hr', nrows=None, newfiletype=False,
-                       resample_out=None, velocity=False):
+def mergeGridData(grid, data):
     '''
         Reads an output file and add matplotlib patches to grid dataframe for
         plotting
 
         Input
         -----
-        grid : pandas.DataFrame
+        grid: pandas.DataFrame
             output from `readModelGrid(...)`
-
-        filename : string
-            full path to the model output file
-
-        icol : string (default = ' icell' # note the leading space)
-            name of the column with I grid cell index
-
-        jcol : string (default = ' jcell' # note the leading space)
-            name of the column with J grid cell index
-
-        tcol : string (default = ' time_stamp' # note the leading space)
-            name of the column containing the timestamp
-
-        valcol : string (default = ' value' # note the leading space)
-            name of the column containing the actual values of the output file
-
-        cmap : matplotlib.colors.Colormap instance (default = plt.cm.Blues)
-            colormap to be applied to the values when plotting
-
+        data: pandas.DataFrame with index of ['I', 'J'] containing data values
 
         Output
         ------
-        joined : pandas.dataframe
-            index = integer-based multi-index on the values of I and J
-            columns = [
-                cell = shapely.geometry.Polygon object reprsenting the grid cell
-                area = float value of the area of the grid cell (based on the
-                    shapefiles's coordinate system)
-                value = output value read in from `filename`
-                patch = matplotlib.patches.PathPatch to display each cell
-                easting = local coordinate easting of the grid cell's centroid
-                northing = local coordinate northing of the grid cell's centroid
+        pandas.DataFrame
     '''
 
-    output = _read_out(filename, valcol, nrows=nrows, velocity=velocity, icol=icol,
-                  jcol=jcol, tcol=tcol, hcol=hcol)
-
-    data = output[['value', hcol]]
-    data.reset_index(inplace=True)
-    data.dropna(subset=['tstep'], inplace=True)
-    data['datetime'] = (data[hcol].apply(
-        lambda dt: datetime.datetime(
-            year, month, 1) + datetime.timedelta(dt/24)))
-    if resample_out is not None:
-        data = (data
-                    .set_index('datetime')
-                    .groupby(['I', 'J'])
-                    .resample(resample_out, how='mean')
-                    .reset_index()
-                )
-
-    # join the output data and drop NA values (i.e. cells with no output data)
-    joined = grid.join(data.set_index(['I', 'J']), how='outer').dropna()
-
     # little function to help me make polygon patches for plotting
-    def makePatch(row):
+    def makePatch(cell):
         '''
         Input `row` is just a row of a pandas.DataFrame
         '''
         # rgb = (row['r'], row['b'], row['g'])
-        patch = PolygonPatch(row['cell'], edgecolor='White', linewidth=0.25)
+        patch = PolygonPatch(cell, edgecolor='White', linewidth=0.25)
         return patch
 
-    # add a matplotlib patch to each row
-    joined['patch'] = joined.apply(makePatch, axis=1)
-    joined = joined.reset_index().set_index(['tstep', 'I', 'J'])
+ 
+# add a matplotlib patch to each row
+    joined = (grid.assign(patch=grid.cell.apply(makePatch))
+                  .join(data), how='outer')
+                  .dropna()
+                  .reset_index()
+                  .set_index(['tstep', 'I', 'J'])
+
     return joined
 
 def plotGrid(grid, patchcol='patch', ax=None, cmap=plt.cm.Blues, vextent=None,
-             log=True, blankgrid=False, datetime_fmt="%Y-%m-%d", **figkwargs):
+             log=True, blankgrid=False, datetime_fmt="%Y-%m-%d %H:%M", **figkwargs):
     '''
         Creates a matplotlib figure of model grid with some output values assoicated
         with each cell
@@ -341,6 +297,7 @@ class GridAesthetics(object):
     @property
     def gridValues(self):
         if self._gridValues is None:
+            ### !!! Need to change to work with mergeGridData !!!
             gv = attachAnimateValues(self.modelGrid, self.datapath,
                 self._valcol, self.year, self.month, icol=self._icol, jcol=self._jcol,
                 tcol=self._tcol, nrows=None, newfiletype=self.newfiletype,
