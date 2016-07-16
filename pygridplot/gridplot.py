@@ -183,9 +183,6 @@ def attachAnimateValues(grid, filename, valcol, year, month, icol='I_MOD', jcol=
 
     # join the output data and drop NA values (i.e. cells with no output data)
     joined = grid.join(data.set_index(['I', 'J']), how='outer').dropna()
-    # joined.set_index(['tstep'], append=True, inplace=True)
-    # normalize all of the values
-    joined['normed_value'] = (joined.value - joined.value.min()) / joined.value.max()
 
     # little function to help me make polygon patches for plotting
     def makePatch(row):
